@@ -159,8 +159,8 @@
                         <button class="save-btn">保存配置</button>
                     </div>
                     <div class="other">
-                        <a href="https://www.zhangchengwei.work/message" target="_blank" rel="帮助" title="帮助">!帮助</a>
-                        <a href="https://github.com/izcw" target="_blank" rel="Github" title="Github">Github</a>
+                        <a href="https://www.zhangchengwei.work/message" target="_blank" rel="帮助" title="帮助">帮助</a>
+                        <a href="https://github.com/izcw/bilibili-AutoWidescreen" target="_blank" rel="Github" title="Github">Github</a>
                     </div>
                 </div>
             `;
