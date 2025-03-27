@@ -4,7 +4,7 @@
 // @license     MIT
 // @namespace   nana_vao_script
 // @description B站播放页自动宽屏、滚动控制、导航显示、带悬浮面板
-// @version     1.0.2
+// @version     1.0.3
 // @match       /^https?://www\.bilibili\.com/video/(BV|av)\w+/
 // @include     /^https?://(www\.bilibili\.com/(video/(BV|av)|bangumi/play|medialist|list)|bangumi\.bilibili\.com/anime)/
 // @run-at      document-end
@@ -60,7 +60,15 @@
                 }));
                 delete config.enabledPages;
             }
-            return Object.assign({}, this.defaultConfig, config);
+            // 确保防烧屏配置合并正确
+            return {
+                ...this.defaultConfig,
+                ...config,
+                burnInProtection: {
+                    ...this.defaultConfig.burnInProtection,
+                    ...(config.burnInProtection || {})
+                }
+            };
         },
 
         getPageName(title) {
@@ -296,22 +304,33 @@
 
         saveConfig() {
             const config = ConfigManager.getConfig();
+
+            // 1. 保存页面类型勾选状态
+            config.pageSettings = Array.from(this.panel.querySelectorAll('input[data-type="page"]')).map(input => ({
+                title: input.dataset.title,
+                status: input.checked, // 读取勾选状态
+                name: ConfigManager.getPageName(input.dataset.title)
+            }));
+
+            // 2. 保存防烧屏设置
+            // 修复防烧屏配置保存（调整展开顺序）
+            const burnInCheckbox = this.panel.querySelector('input[data-type="burnInProtection"]');
+            config.burnInProtection = {
+                ...config.burnInProtection, // 保留原有参数（step/maxOffset等）
+                enabled: burnInCheckbox.checked // 新状态覆盖旧值
+            };
+
+            // 3. 原有逻辑（自动滚动和导航显示）
             const inputValue = this.panel.querySelector('.number-input').value;
-
-            // 增强输入验证逻辑
             let offset = Number(inputValue);
-            if (isNaN(offset) || offset < 0 || offset > 1000) {
-                offset = 0;  // 超出范围或非法输入时强制归零
-                this.panel.querySelector('.number-input').value = 0;  // 同步更新UI
-            }
-
+            if (isNaN(offset) || offset < 0 || offset > 1000) offset = 0;
             config.autoScroll = {
                 enabled: this.panel.querySelector('input[data-type="autoScroll"]').checked,
                 offset: offset
             };
-
             config.showHeader = this.panel.querySelector('input[data-type="showHeader"]').checked;
 
+            // 4. 保存并刷新
             ConfigManager.saveConfig(config);
             this.collapsePanel();
             setTimeout(() => location.reload(), 300);
@@ -321,7 +340,6 @@
     /* 核心功能模块 */
     const Core = {
         init() {
-            FloatPanel.init();
             const config = ConfigManager.getConfig();
             this.toggleHeader(config.showHeader);
 
@@ -398,5 +416,6 @@
     };
 
     // 初始化
+    FloatPanel.init();
     Core.init();
 })();
