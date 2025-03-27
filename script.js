@@ -4,7 +4,7 @@
 // @license     MIT
 // @namespace   nana_vao_script
 // @description B站播放页自动宽屏、滚动控制、导航显示、带悬浮面板
-// @version     1.0.1
+// @version     1.0.2
 // @match       /^https?://www\.bilibili\.com/video/(BV|av)\w+/
 // @include     /^https?://(www\.bilibili\.com/(video/(BV|av)|bangumi/play|medialist|list)|bangumi\.bilibili\.com/anime)/
 // @run-at      document-end
@@ -130,6 +130,11 @@
                                     ${config.autoScroll.enabled ? 'checked' : ''}>
                                 启用页面自动滚动
                             </label>
+                            <label>
+                                滚动距离(0-1000)：
+                                <input type="number" class="number-input" value="${config.autoScroll.offset}" min="0" max="1000" step="10">
+                                px
+                            </label>
                         </div>
                     </div>
                     <div class="config-section">
@@ -140,13 +145,6 @@
                                     data-type="burnInProtection"
                                     ${config.burnInProtection.enabled ? 'checked' : ''}>
                                 启用面板防烧屏保护
-                            </label>
-                            <label>
-                                移动幅度(0-100)：
-                                <input type="number" class="number-input"
-                                    value="${config.burnInProtection.maxOffset}"
-                                    min="10" max="100" step="5">
-                                px
                             </label>
                         </div>
                     </div>
