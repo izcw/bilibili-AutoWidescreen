@@ -19,4 +19,4 @@
 
 可以选择对视频类型自动宽屏、播放页是否显示导航、是否自动滚动页面等
 
-![配置框](https://picserver.duoyu.link/picfile/image/202503/28-1743095792961.png "配置框")
+![配置框](https://picserver.duoyu.link/picfile/image/202504/28-1743095792961.png "配置框")

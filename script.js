@@ -4,7 +4,7 @@
 // @license     MIT
 // @namespace   nana_vao_script
 // @description B站播放页自动宽屏、滚动控制、导航显示、带悬浮面板
-// @version     1.0.3
+// @version     1.0.4
 // @match       /^https?://www\.bilibili\.com/video/(BV|av)\w+/
 // @include     /^https?://(www\.bilibili\.com/(video/(BV|av)|bangumi/play|medialist|list)|bangumi\.bilibili\.com/anime)/
 // @run-at      document-end
@@ -13,8 +13,8 @@
 // @grant       GM_addStyle
 // @grant       GM_getResourceURL
 // @icon        https://www.bilibili.com/favicon.ico
-// @downloadURL https://izcw.github.io/bilibili-AutoWidescreen/script.js
-// @updateURL   https://izcw.github.io/bilibili-AutoWidescreen/script.js
+// @downloadURL https://update.greasyfork.org/scripts/531057/bilibili%20%7C%20b%E7%AB%99%E6%92%AD%E6%94%BE%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%AE%BD%E5%B1%8F.user.js
+// @updateURL https://update.greasyfork.org/scripts/531057/bilibili%20%7C%20b%E7%AB%99%E6%92%AD%E6%94%BE%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%AE%BD%E5%B1%8F.meta.js
 // ==/UserScript==
 
 (function () {
@@ -37,9 +37,10 @@
             burnInProtection: {  // 新增防烧屏配置
                 enabled: true,
                 step: 1,        // 单次移动像素
-                maxOffset: 100,  // 最大偏移量
-                interval: 10000 // 移动间隔(ms)
-            }
+                maxOffset: 60,  // 最大偏移量
+                interval: 5000 // 移动间隔(ms)
+            },
+            listenUrlChange: false // 新增监听 URL 变化配置
         },
 
         getConfig() {
@@ -106,16 +107,16 @@
                     </div>
                     <div class="config-section">
                         <h4>宽屏-页面类型（只有在勾选的视频类型才触发）</h4>
-                        <div class="config-items">
-                            ${config.pageSettings.map(item => `
-                                <label>
+                        <div class="config-items  config-items-type">
+                            ${config.pageSettings.map(item =>
+                `<label>
                                     <input type="checkbox"
                                         data-type="page"
                                         data-title="${item.title}"
                                         ${item.status ? 'checked' : ''}>
                                     ${item.name}
-                                </label>
-                            `).join('')}
+                                </label>`
+            ).join('')}
                         </div>
                     </div>
                     <div class="config-section">
@@ -136,17 +137,20 @@
                                 <input type="checkbox"
                                     data-type="autoScroll"
                                     ${config.autoScroll.enabled ? 'checked' : ''}>
-                                启用页面自动滚动
-                            </label>
-                            <label>
-                                滚动距离(0-1000)：
+                                页面自动滚动(0-1000)：
                                 <input type="number" class="number-input" value="${config.autoScroll.offset}" min="0" max="1000" step="10">
                                 px
+                            </label>
+                            <label>
+                                <input type="checkbox"
+                                    data-type="listenUrlChange"
+                                    ${config.listenUrlChange ? 'checked' : ''}>
+                                切换视频也执行滚动
                             </label>
                         </div>
                     </div>
                     <div class="config-section">
-                        <h4>工具按钮防烧屏设置</h4>
+                        <h4>其它</h4>
                         <div class="config-items">
                             <label>
                                 <input type="checkbox"
@@ -157,6 +161,7 @@
                         </div>
                     </div>
                     <div class="footer">
+                        <button class="reset-btn">恢复默认</button>
                         <button class="save-btn">保存配置</button>
                     </div>
                     <div class="other">
@@ -167,7 +172,7 @@
             `;
             setTimeout(() => {
                 document.getElementById('mirror-vdcon').append(this.panel);
-            }, 3000)
+            }, 3000);
         },
 
         applyPanelStyles() {
@@ -180,7 +185,6 @@
                     position: absolute;
                     top: 0;
                     right: 20px;
-                    z-index: 9999;
                     width: 30px;
                     height: 14px;
                     border-radius: 0 0 6px 6px;
@@ -189,6 +193,7 @@
                     cursor: pointer;
                     transition: transform 1s ease-in-out; /* 平滑移动动画 */
                     overflow: hidden;
+                    z-index: 100;
                 }
                 #bili-auto-wide-panel.expanded {
                     width: 320px;
@@ -228,7 +233,7 @@
                     background: #EFEFEF;
                 }
                 .config-section {
-                    margin-bottom: 15px;
+                    margin-bottom: 1.5rem;
                 }
                 .config-section h4 {
                     margin: 0 0 10px 0;
@@ -241,12 +246,21 @@
                     flex-direction: column;
                     gap: 8px;
                     color: #444;
+                    padding: 0 10px;
                 }
                 .config-items label {
                     display: flex;
                     align-items: center;
                     gap: 6px;
                     cursor: pointer;
+                }
+
+                .config-items-type{
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                }
+                .config-items-type label{
+                    width: 120px;
                 }
                 .number-input {
                     width: 80px;
@@ -256,6 +270,15 @@
                 .footer {
                     margin-top: 15px;
                     text-align: right;
+                }
+                .reset-btn {
+                    padding: 6px 20px;
+                    background: #EAEDF2;
+                    color: #333;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin-right: 10px;
                 }
                 .save-btn {
                     padding: 6px 20px;
@@ -290,6 +313,10 @@
             this.panel.querySelector('.save-btn').addEventListener('click', () => {
                 this.saveConfig();
             });
+
+            this.panel.querySelector('.reset-btn').addEventListener('click', () => {
+                this.resetConfig();
+            });
         },
 
         expandPanel() {
@@ -313,14 +340,17 @@
             }));
 
             // 2. 保存防烧屏设置
-            // 修复防烧屏配置保存（调整展开顺序）
             const burnInCheckbox = this.panel.querySelector('input[data-type="burnInProtection"]');
             config.burnInProtection = {
                 ...config.burnInProtection, // 保留原有参数（step/maxOffset等）
                 enabled: burnInCheckbox.checked // 新状态覆盖旧值
             };
 
-            // 3. 原有逻辑（自动滚动和导航显示）
+            // 3. 保存监听 URL 变化设置
+            const listenUrlChangeCheckbox = this.panel.querySelector('input[data-type="listenUrlChange"]');
+            config.listenUrlChange = listenUrlChangeCheckbox.checked;
+
+            // 4. 原有逻辑（自动滚动和导航显示）
             const inputValue = this.panel.querySelector('.number-input').value;
             let offset = Number(inputValue);
             if (isNaN(offset) || offset < 0 || offset > 1000) offset = 0;
@@ -330,8 +360,15 @@
             };
             config.showHeader = this.panel.querySelector('input[data-type="showHeader"]').checked;
 
-            // 4. 保存并刷新
+            // 5. 保存并刷新
             ConfigManager.saveConfig(config);
+            this.collapsePanel();
+            setTimeout(() => location.reload(), 300);
+        },
+
+        resetConfig() {
+            // 恢复默认配置
+            ConfigManager.saveConfig(ConfigManager.defaultConfig);
             this.collapsePanel();
             setTimeout(() => location.reload(), 300);
         }
@@ -357,6 +394,11 @@
 
             if (config.burnInProtection.enabled) {
                 this.startBurnInProtection();
+            }
+
+            // 监听 URL 变化
+            if (config.listenUrlChange) {
+                this.listenUrlChange();
             }
         },
 
@@ -404,14 +446,68 @@
             const config = ConfigManager.getConfig().burnInProtection;
             let currentOffset = 0;
             let direction = 1; // 1=左移，-1=右移
+            let animationInterval;
+
+            const stopAnimation = () => {
+                if (animationInterval) {
+                    clearInterval(animationInterval);
+                    animationInterval = null;
+                }
+            };
+
+            const startAnimation = () => {
+                stopAnimation();
+                animationInterval = setInterval(() => {
+                    // 边界检查前先计算下一步偏移量
+                    const nextOffset = currentOffset + direction * config.step;
+
+                    // 超过最大偏移时反转方向，并修正为最大值
+                    if (nextOffset > config.maxOffset) {
+                        currentOffset = config.maxOffset;
+                        direction = -1;
+                    }
+                    // 低于最小偏移时反转方向，并修正为最小值
+                    else if (nextOffset < 0) {
+                        currentOffset = 0;
+                        direction = 1;
+                    }
+                    // 正常范围时直接更新
+                    else {
+                        currentOffset = nextOffset;
+                    }
+
+                    FloatPanel.panel.style.transform = `translateX(-${currentOffset}px)`;
+                }, config.interval);
+            };
+
+            startAnimation();
+
+            window.addEventListener('popstate', () => {
+                stopAnimation();
+                currentOffset = 0;    // 重置偏移量
+                direction = 1;        // 新增：重置方向
+                startAnimation();
+            });
+        },
+
+        listenUrlChange() {
+            const config = ConfigManager.getConfig();
+            let lastUrl = location.href;
 
             setInterval(() => {
-                if (currentOffset >= config.maxOffset) direction = -1;
-                if (currentOffset <= 0) direction = 1;
+                const currentUrl = location.href;
+                if (currentUrl !== lastUrl) {
+                    lastUrl = currentUrl;
+                    this.handleUrlChange(config);
+                }
+            }, 500); // 每 500ms 检查一次 URL 变化
+        },
 
-                currentOffset += direction * config.step;
-                FloatPanel.panel.style.transform = `translateX(-${currentOffset}px)`;
-            }, config.interval);
+        handleUrlChange(config) {
+            // URL 变化时仅执行自动滚动
+            if (config.autoScroll.enabled) {
+                window.scrollTo(0, config.autoScroll.offset);
+            }
         }
     };
 
